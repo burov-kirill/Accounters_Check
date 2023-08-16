@@ -203,7 +203,7 @@ class GoogleDocFile:
                                      '',
                                      '',
                                      '']], columns=main_table_columns)
-        main_table = pd.concat([main_table, summary_row])
+
         summary_percent = sum(main_table['Факт'])/sum(main_table['План'])
         superior_percent = len(self.report[self.report[self.LAST_COLUMN]>5])/len(self.report)
         date_table = np.around(self.raw_report[[self.LAST_COLUMN, 'Организация']].groupby([self.LAST_COLUMN], as_index=False).count(), 0)
@@ -230,6 +230,7 @@ class GoogleDocFile:
         worst_company = succeed_table.sort_values(by='Coeff').iloc[-11:-1]
         average_table = pd.DataFrame(map(lambda x: (x[0], sum(x[1])/len(x[1])), self.AVERAGE_POINT_DICT.items()), columns = ['Участок','Средний бал'])
         average_table = average_table.sort_values(by=['Средний бал'], ascending=True)
+        main_table = pd.concat([main_table, summary_row])
         tables_data = [main_table, summary_percent, superior_percent, date_table, term_data,
                                        plan_table, best_company,worst_company, average_table]
         tables = dict()

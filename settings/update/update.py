@@ -123,3 +123,13 @@ def call_updater(type_file = 'pocket'):
     my_file = folder_path.replace('\\', '/')
     create_download_window(UPDATE_URL, folder_path)
     set_update_params(my_file, type_file)
+
+        # if os.path.isdir('config'):
+        #     if my_file.is_file():
+        #         set_update_params(str(my_file), is_dir, type_file)
+        #     else:
+        #         create_download_window(UPDATE_URL, str(my_file))
+        #         set_update_params(str(my_file), is_dir, type_file)
+        # else:
+        #     create_download_window(UPDATE_URL, str(my_file))
+        #     set_update_params(str(my_file), is_dir, type_file)
