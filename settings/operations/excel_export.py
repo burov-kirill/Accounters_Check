@@ -33,7 +33,7 @@ def export_to_excel(file, month, save_path):
     result_sheet = wb.create_sheet(month)
     del wb[wb.get_sheet_names()[0]]
     decoration_table(result_sheet, file.report, 2, file.tables['main_table'])
-    name = 'Отчет по закрытию.xlsx'
+    name = 'Отчет_по_закрытию.xlsx'
     save_path = fr'{save_path}\{name}'
     _font = Font(name="Arial Narrow", sz=9, b=False)
     {k: setattr(DEFAULT_FONT, k, v) for k, v in _font.__dict__.items()}
@@ -108,9 +108,9 @@ def export_to_excel(file, month, save_path):
                         if type(date) == datetime.date:
                             diff = file.DATE_DICT[file.LAST_COLUMN] - date
                             if diff.days == 0:
-                                col_idx = 0
-                            elif diff.days > 0:
                                 col_idx = 1
+                            elif diff.days > 0:
+                                col_idx = 0
                             else:
                                 col_idx = 2
                         else:

@@ -228,8 +228,8 @@ class GoogleDocFile:
         succeed_table = pd.DataFrame.from_dict(self.SUCCEED_TABLE, orient='index', columns=['Type', 'Coeff'])
         succeed_table.reset_index(inplace=True)
         succeed_table.columns = ['Company', 'Type', 'Coeff']
-        worst_company = succeed_table[succeed_table['Type'] == 'ТЗО'].sort_values(by='Coeff').iloc[:10][['Company', 'Coeff']]
-        best_company = succeed_table[succeed_table['Type'] != 'ТЗО'].sort_values(by='Coeff').iloc[-11:-1][['Company', 'Coeff']]
+        worst_company = succeed_table[succeed_table['Type'] != 'ТЗО'].sort_values(by='Coeff').iloc[:10][['Company', 'Coeff']]
+        best_company = succeed_table[succeed_table['Type'] == 'ТЗО'].sort_values(by='Coeff').iloc[-11:-1][['Company', 'Coeff']]
         average_table = pd.DataFrame(map(lambda x: (x[0], sum(x[1])/len(x[1])), self.AVERAGE_POINT_DICT.items()), columns = ['Участок','Средний бал'])
         average_table = average_table.sort_values(by=['Средний бал'], ascending=True)
         main_table = pd.concat([main_table, summary_row])

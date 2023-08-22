@@ -421,8 +421,8 @@ def rgbToInt(rgb):
         return rgb
 
 def create_presentation(save_path):
-    presentation_path = fr'{save_path}/Отчет по закрытию.pptx'
-    excel_file = fr'{save_path}/Отчет по закрытию.xlsx'
+    presentation_path = fr'{save_path}/Отчет_по_закрытию.pptx'
+    excel_file = fr'{save_path}/Отчет_по_закрытию.xlsx'
     PowerPoint = win32com.client.Dispatch("PowerPoint.Application")
     Excel = win32com.client.Dispatch("Excel.Application")
     # PowerPoint.Visible = False
