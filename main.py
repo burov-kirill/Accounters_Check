@@ -11,7 +11,7 @@ try:
     data = GoogleDocFile(values['ref'])
     data.tables = read_old_data(data.tables, values['--MONTH--'], values['plot_data'])
     export_to_excel(data, values['--MONTH--'], values['save_path'])
-    create_presentation(values['save_path'], values['--MONTH--'], data)
+    create_presentation(values['save_path'])
 except Exception as exp:
     error_panel(exp)
 else:

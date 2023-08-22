@@ -28,8 +28,8 @@ class GoogleDocFile:
                   12: 'декабря'
     }
     CURRENT_YEAR = 2023
-    KEYWORDS = ['Организация', 'Отв.', 'Главный бухгалтер', 'Бухгалтер по первичной документации', 'Ответственные']
-    COLUMNS = ['Организация', 'Ответственные']
+    KEYWORDS = ['Организация', 'Закрываемость', 'Отв.', 'Главный бухгалтер', 'Бухгалтер по первичной документации', 'Ответственные']
+    COLUMNS = ['Организация', 'Закрываемость', 'Ответственные']
     DATE_DICT = dict()
     LAST_COLUMN = 'Дата итогового закрытия'
     SUCCEED_TABLE = dict()
@@ -167,7 +167,7 @@ class GoogleDocFile:
                 if str(self.report.iloc[idx][col]).isdigit():
                     summary+=self.report.iloc[idx][col]
             if opt:
-                self.SUCCEED_TABLE[self.report['Организация'][idx]] = summary/(count*2+5)
+                self.SUCCEED_TABLE[self.report['Организация'][idx]] = (self.report['Закрываемость'][idx], summary/(count*2+5))
             result_list.append(summary if opt else count)
 
         return pd.DataFrame(result_list)
@@ -225,9 +225,13 @@ class GoogleDocFile:
         plan_table = main_table[['Результат', 'Количество участков']].groupby(['Результат'], as_index=False).count()
         common_count = sum(plan_table['Количество участков'])
         plan_table['Количество участков'] = np.around(plan_table['Количество участков'] / common_count,2)
-        succeed_table = pd.DataFrame(self.SUCCEED_TABLE.items(), columns=['Company', 'Coeff'])
-        best_company = succeed_table.sort_values(by='Coeff').iloc[:10]
-        worst_company = succeed_table.sort_values(by='Coeff').iloc[-11:-1]
+        succeed_table = pd.DataFrame.from_dict(self.SUCCEED_TABLE, orient='index', columns=['Type', 'Coeff'])
+        succeed_table.reset_index(inplace=True)
+        succeed_table.columns = ['Company', 'Type', 'Coeff']
+        worst_company = succeed_table[succeed_table['Type'] == 'ТЗО'].sort_values(by='Coeff').iloc[:10][['Company', 'Coeff']]
+        worst_company['Coeff'] = worst_company['Coeff']*100
+        best_company = succeed_table[succeed_table['Type'] != 'ТЗО'].sort_values(by='Coeff').iloc[-11:-1][['Company', 'Coeff']]
+        best_company['Coeff'] = best_company['Coeff'] * 100
         average_table = pd.DataFrame(map(lambda x: (x[0], sum(x[1])/len(x[1])), self.AVERAGE_POINT_DICT.items()), columns = ['Участок','Средний бал'])
         average_table = average_table.sort_values(by=['Средний бал'], ascending=True)
         main_table = pd.concat([main_table, summary_row])

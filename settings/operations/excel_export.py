@@ -1,5 +1,7 @@
-import openpyxl
+import os
 
+import openpyxl
+import win32com.client
 from openpyxl.chart.axis import ChartLines
 from openpyxl.chart.label import DataLabelList
 from openpyxl.chart.marker import DataPoint
@@ -119,9 +121,9 @@ def export_to_excel(file, month, save_path):
                     chart.height = 10  # default is 7.5
                     chart.width = 20
                     if key == 'best_company':
-                        color_list = ["FF0000"]
+                        color_list = ["00FF00"]
                     else:
-                        color_list = ['00FF00']
+                        color_list = ['FF0000']
                     for idx, point in enumerate(slices):
                         col_idx = idx % len(color_list)
                         point.graphicalProperties.solidFill = color_list[col_idx]
@@ -174,9 +176,9 @@ def export_to_excel(file, month, save_path):
                 slices = [DataPoint(idx=i) for i in range(len(value))]
                 color_list = ["00FF00", "ffff00", "FF0000"]
                 for point, dt in zip(slices, value['Средний бал']):
-                    if dt >= 2:
+                    if dt > 2.3:
                         color_idx = 0
-                    elif dt < 2 and dt > 1.5:
+                    elif dt <= 2.3 and dt > 1.5:
                         color_idx = 1
                     else:
                         color_idx = 2
@@ -195,7 +197,6 @@ def export_to_excel(file, month, save_path):
         #     init_col+=len(value.columns) + 2
     wb.save(save_path)
     wb.close()
-
 
 
 def decoration_table(ws, table, col, other_table):
