@@ -6,6 +6,7 @@ import locale
 import win32com.client
 import PySimpleGUI as sg
 
+from settings.update.config import VERSION
 from settings.update.update import call_updater, check_version
 
 locale.setlocale(locale.LC_TIME, 'ru')
@@ -49,7 +50,7 @@ def main_panel():
         [sg.OK(button_text='Далее'), sg.Cancel(button_text='Выход')]
 
     ]
-    yeet = sg.Window(f'Сверка БИТ и CRM', layout=layout)
+    yeet = sg.Window(f'Сверка БИТ и CRM ver.{VERSION}', layout=layout)
     check, upd_check = False, True
     while True:
         event, values = yeet.read(timeout=10)

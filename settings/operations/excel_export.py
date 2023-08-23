@@ -15,13 +15,15 @@ from openpyxl.utils import get_column_letter, column_index_from_string
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.formatting.rule import ColorScale, FormatObject
 from openpyxl.styles import Color
-from openpyxl.chart import BarChart, Reference, BarChart3D, DoughnutChart
+from openpyxl.chart import BarChart, Reference, BarChart3D, DoughnutChart, LineChart
 from openpyxl.chart.layout import Layout, ManualLayout
 import datetime
 
+from logs import log
+
 PLOT_DICT = {'main_table': '',
              'summary_percent': 'Общее выполнение плана по срокам закрытия, %',
-             'superior_percent': 'Доля компаний, нарушающих регламентированные',
+             'superior_percent': 'Доля компаний, нарушающих регламентированные сроки, %',
              'date_table': 'Распределение дат итогового закрытия отчётного месяца',
              'term_data': 'Структурный анализ итогового закрытия отчётного месяца',
              'plan_table': 'Структурный анализ соблюдения Регламентируемых сроков',
@@ -29,6 +31,7 @@ PLOT_DICT = {'main_table': '',
              'worst_company': 'ТОП-10 «Зона роста»',
              'average_table': 'Рейтинг закрытия участков РСБУ на основе балльной системы'}
 def export_to_excel(file, month, save_path):
+    log.info('Оформление Excel файла')
     wb = openpyxl.Workbook()
     result_sheet = wb.create_sheet(month)
     del wb[wb.get_sheet_names()[0]]
@@ -60,20 +63,49 @@ def export_to_excel(file, month, save_path):
                 chart1.set_categories(cats)
                 # chart1.shape = 4
                 chart1.y_axis.number_format = '0%'
-                chart1.y_axis.delete = True
-                chart1.x_axis.majorGridlines = None
-                chart1.y_axis.majorGridlines = None
+                # chart1.y_axis.delete = True
+                # chart1.x_axis.majorGridlines = None
+                # chart1.y_axis.majorGridlines = None
                 chart1.legend = None
                 slices = [DataPoint(idx=i) for i in range(len(value))]
-                color_list = ["CFCFCF", "007bfb", "ffffff"]
-                for idx, point in enumerate(slices):
-                    col_idx = idx % len(color_list)
-                    point.graphicalProperties.solidFill = color_list[col_idx]
-                    point.graphicalProperties.ln.solidFill = color_list[col_idx]
-                    if col_idx == 2:
-                        point.graphicalProperties.ln.solidFill = color_list[1]
-                        point.graphicalProperties.ln.w = 2
+                color_list = ["B00000", "007bfb", "ffffff"]
+                if key == 'summary_percent':
+                    for element, point in zip(value['percent'], slices):
+                        if element<0.8:
+                            point.graphicalProperties.solidFill = color_list[0]
+                            point.graphicalProperties.ln.solidFill = color_list[0]
+                        elif element>=0.8 and element<1:
+                            point.graphicalProperties.solidFill = color_list[2]
+                            point.graphicalProperties.ln.solidFill = color_list[2]
+                            point.graphicalProperties.ln.solidFill = color_list[1]
+                            point.graphicalProperties.ln.w = 2
+                        else:
+                            point.graphicalProperties.solidFill = color_list[1]
+                            point.graphicalProperties.ln.solidFill = color_list[1]
+                else:
+                    for element, point in zip(value['percent'], slices):
+                        if element<=0.3:
+                            point.graphicalProperties.solidFill = color_list[1]
+                            point.graphicalProperties.ln.solidFill = color_list[1]
+                        elif element>0.3 and element<0.5:
+                            point.graphicalProperties.solidFill = color_list[2]
+                            point.graphicalProperties.ln.solidFill = color_list[2]
+                            point.graphicalProperties.ln.solidFill = color_list[1]
+                            point.graphicalProperties.ln.w = 2
+                        else:
+                            point.graphicalProperties.solidFill = color_list[0]
+                            point.graphicalProperties.ln.solidFill = color_list[0]
+
                 chart1.series[0].data_points = slices
+                line_chart = LineChart()
+                line_chart.style = 13
+                data = Reference(tables_sheet, min_col=4, min_row=row, max_col=4, max_row=row + len(value))
+                line_chart.add_data(data, titles_from_data=True)
+                s1 = line_chart.series[0]
+                # s1.marker.symbol = "triangle"
+                s1.graphicalProperties.solidFill = "9400D3"
+                s1.graphicalProperties.line.solidFill = "9400D3"
+                s1.graphicalProperties.line.width = 20000
                 # chart1.y_axis.majorGridlines.spPr = GraphicalProperties(noFill='True')
                 # chart1.y_axis.majorGridlines.spPr.ln = LineProperties(solidFill='000000')
 
@@ -82,7 +114,9 @@ def export_to_excel(file, month, save_path):
                 # chart1.x_axis.majorGridlines.spPr.ln = LineProperties(solidFill='000000')
                 chart1.dLbls = DataLabelList()
                 chart1.dLbls.showVal = 1
+                chart1+=line_chart
                 tables_sheet.add_chart(chart1, f"{get_column_letter(init_col + 4)}{row}")
+
             elif key in ('date_table','best_company', 'worst_company'):
                 data = Reference(tables_sheet, min_col=3, min_row=row, max_col=3, max_row=row + len(value))
                 if key == 'date_table':

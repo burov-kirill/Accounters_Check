@@ -405,6 +405,9 @@
 #
 import os
 import win32com.client
+
+from logs import log
+
 header_dict = { 'Chart 1': 'Соблюдение Регламентируемых сроков закрытия',
                 'Chart 2': 'Соблюдение Регламентируемых сроков закрытия',
                 'Chart 4': 'Сводные данные по итоговому закрытию',
@@ -421,82 +424,94 @@ def rgbToInt(rgb):
         return rgb
 
 def create_presentation(save_path):
+    log.info('Оформление презентации')
+
     presentation_path = fr'{save_path}/Отчет_по_закрытию.pptx'
     excel_file = fr'{save_path}/Отчет_по_закрытию.xlsx'
     PowerPoint = win32com.client.Dispatch("PowerPoint.Application")
     Excel = win32com.client.Dispatch("Excel.Application")
+
     # PowerPoint.Visible = False
     presentation = PowerPoint.Presentations.Add(True)
     workbook = Excel.Workbooks.Open(Filename=excel_file, ReadOnly=1, UpdateLinks=False)
-    for ws in workbook.Worksheets:
-        if  list(ws.ChartObjects()) == []:
+    try:
+        for ws in workbook.Worksheets:
+            if  list(ws.ChartObjects()) == []:
+                Slide = presentation.Slides.Add(presentation.Slides.Count + 1, 12)
+                Slide.FollowMasterBackground = False
+                Slide.Background.Fill.UserPicture(os.path.abspath(r'images\back.png'))
+                textbox = Slide.Shapes.AddTextbox(1, 10, 10, 500, 100)
+                textbox.TextFrame.TextRange.Text = 'Мониторинг \nзакрытия '
+                textbox.TextFrame.TextRange.Font.Bold = True
+                textbox.TextFrame.TextRange.Font.Color = rgbToInt((255, 255, 255))
+                textbox.TextFrame.TextRange.Font.Size = 40
+                continue
+            for chart in ws.ChartObjects():
+                # два графика на одном слайде
+                # подписи
+                chart.Activate()
+                chart.Copy()
+                if chart.Name not in  ('Chart 4', 'Chart 7'):
+                    Slide = presentation.Slides.Add(presentation.Slides.Count + 1, 12)
+
+                Slide.FollowMasterBackground = False
+                Slide.Background.Fill.UserPicture(os.path.abspath(r'images\background.png'))
+                Slide.Shapes.PasteSpecial(11)
+                if chart.Name in ('Chart 4', 'Chart 7'):
+                    Slide.Shapes[1].Left = 500
+                    # chart.Left = 18
+                elif chart.Name in ('Chart 3', 'Chart 6'):
+                    Slide.Shapes[0].Left = 2
+                elif chart.Name == 'Chart 8':
+                    Slide.Shapes[0].Width = 500
+                    Slide.Shapes[0].Height = 500
+                    Slide.Shapes[0].Left = 200
+                    Slide.Shapes[0].Top = 25
+                if chart.Name in header_dict.keys():
+                    textbox = Slide.Shapes.AddTextbox(1, 10, 10, 500, 100)
+                    textbox.TextFrame.TextRange.Text = header_dict[chart.Name]
+                    textbox.TextFrame.TextRange.Font.Bold = True
+                    textbox.TextFrame.TextRange.Font.Color = rgbToInt((0, 0, 0))
+
             Slide = presentation.Slides.Add(presentation.Slides.Count + 1, 12)
             Slide.FollowMasterBackground = False
-            Slide.Background.Fill.UserPicture(os.path.abspath(r'images\back.png'))
-            textbox = Slide.Shapes.AddTextbox(1, 10, 10, 500, 100)
-            textbox.TextFrame.TextRange.Text = 'Мониторинг \nзакрытия '
-            textbox.TextFrame.TextRange.Font.Bold = True
-            textbox.TextFrame.TextRange.Font.Color = rgbToInt((255, 255, 255))
-            textbox.TextFrame.TextRange.Font.Size = 40
-            continue
-        for chart in ws.ChartObjects():
-            # два графика на одном слайде
-            # подписи
-            chart.Activate()
-            chart.Copy()
-            if chart.Name not in  ('Chart 4', 'Chart 7'):
-                Slide = presentation.Slides.Add(presentation.Slides.Count + 1, 12)
-
-            Slide.FollowMasterBackground = False
             Slide.Background.Fill.UserPicture(os.path.abspath(r'images\background.png'))
-            Slide.Shapes.PasteSpecial(11)
-            if chart.Name in ('Chart 4', 'Chart 7'):
-                Slide.Shapes[1].Left = 500
-                # chart.Left = 18
-            elif chart.Name in ('Chart 3', 'Chart 6'):
-                Slide.Shapes[0].Left = 2
-            elif chart.Name == 'Chart 8':
-                Slide.Shapes[0].Width = 500
-                Slide.Shapes[0].Height = 500
-                Slide.Shapes[0].Left = 200
-                Slide.Shapes[0].Top = 25
-            if chart.Name in header_dict.keys():
-                textbox = Slide.Shapes.AddTextbox(1, 10, 10, 500, 100)
-                textbox.TextFrame.TextRange.Text = header_dict[chart.Name]
-                textbox.TextFrame.TextRange.Font.Bold = True
-                textbox.TextFrame.TextRange.Font.Color = rgbToInt((0, 0, 0))
-
-        Slide = presentation.Slides.Add(presentation.Slides.Count + 1, 12)
-        Slide.FollowMasterBackground = False
-        Slide.Background.Fill.UserPicture(os.path.abspath(r'images\background.png'))
-        textbox = Slide.Shapes.AddTextbox(1, 10, 10, 500, 100)
-        textbox.TextFrame.TextRange.Text = 'Основные триггеры закрытия'
-        textbox.TextFrame.TextRange.Font.Bold = True
-        textbox.TextFrame.TextRange.Font.Color = rgbToInt((0, 0, 0))
+            textbox = Slide.Shapes.AddTextbox(1, 10, 10, 500, 100)
+            textbox.TextFrame.TextRange.Text = 'Основные триггеры закрытия'
+            textbox.TextFrame.TextRange.Font.Bold = True
+            textbox.TextFrame.TextRange.Font.Color = rgbToInt((0, 0, 0))
 
 
-        Slide = presentation.Slides.Add(presentation.Slides.Count + 1, 12)
-        Slide.FollowMasterBackground = False
-        Slide.Background.Fill.UserPicture(os.path.abspath(r'images\last_back.png'))
-        textbox = Slide.Shapes.AddTextbox(1, 10, 10, 500, 100)
-        textbox.TextFrame.TextRange.Text = 'СПАСИБО'
-        textbox.TextFrame.TextRange.Font.Bold = True
-        textbox.TextFrame.TextRange.Font.Size = 40
-        textbox.TextFrame.TextRange.Font.Color = rgbToInt((255, 255, 255))
+            Slide = presentation.Slides.Add(presentation.Slides.Count + 1, 12)
+            Slide.FollowMasterBackground = False
+            Slide.Background.Fill.UserPicture(os.path.abspath(r'images\last_back.png'))
+            textbox = Slide.Shapes.AddTextbox(1, 10, 10, 500, 100)
+            textbox.TextFrame.TextRange.Text = 'СПАСИБО'
+            textbox.TextFrame.TextRange.Font.Bold = True
+            textbox.TextFrame.TextRange.Font.Size = 40
+            textbox.TextFrame.TextRange.Font.Color = rgbToInt((255, 255, 255))
 
-        textbox = Slide.Shapes.AddTextbox(1, 10, 100, 500, 500)
-        textbox.TextFrame.TextRange.Text = 'По всем вопросам, связанным с мониторингом закрытия\n' \
-                                           'периода, можно обратиться к:\n\n' \
-                                           'Любовь Данилина – руководитель кластера Базовый учёт;\n' \
-                                           'Ольга Иванова – методолог РСБУ;\n' \
-                                           'Ольга Клыч  – менеджер внедрения изменений;\n' \
-                                           'Ник Абэ  – координатор, автор отчёта.'
-        textbox.TextFrame.TextRange.Font.Color = rgbToInt((255, 255, 255))
-        # textbox = Slide.Shapes.AddTextbox(1, 100, 100, 200, 300)
-        # textbox.TextFrame.TextRange.Text = str(chart.Chart.ChartTitle.Text)
+            textbox = Slide.Shapes.AddTextbox(1, 10, 100, 500, 500)
+            textbox.TextFrame.TextRange.Text = 'По всем вопросам, связанным с мониторингом закрытия\n' \
+                                               'периода, можно обратиться к:\n\n' \
+                                               'Любовь Данилина – руководитель кластера Базовый учёт;\n' \
+                                               'Ольга Иванова – методолог РСБУ;\n' \
+                                               'Ольга Клыч  – менеджер внедрения изменений;\n' \
+                                               'Ник Абэ  – координатор, автор отчёта.'
+            textbox.TextFrame.TextRange.Font.Color = rgbToInt((255, 255, 255))
+            # textbox = Slide.Shapes.AddTextbox(1, 100, 100, 200, 300)
+            # textbox.TextFrame.TextRange.Text = str(chart.Chart.ChartTitle.Text)
 
-    presentation.SaveAs(presentation_path)
-    presentation.Close()
-    workbook.Close()
-    Excel.Quit()
-    PowerPoint.Quit()
+        # presentation.SaveAs(presentation_path)
+        # presentation.Close()
+        # workbook.Close()
+        # Excel.Quit()
+        # PowerPoint.Quit()
+    except Exception as exp:
+        log.info(f'Возникло исключение при оформлении презентации\n{exp}')
+    finally:
+        presentation.SaveAs(presentation_path)
+        presentation.Close()
+        workbook.Close()
+        Excel.Quit()
+        PowerPoint.Quit()

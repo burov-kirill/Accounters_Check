@@ -5,7 +5,7 @@ from copy import copy
 from datetime import datetime
 import datetime as dt
 from io import BytesIO
-
+from logs import log
 import numpy as np
 import pandas as pd
 import requests
@@ -35,6 +35,7 @@ class GoogleDocFile:
     SUCCEED_TABLE = dict()
     AVERAGE_POINT_DICT = defaultdict(list)
     def __init__(self, url):
+        log.info('Считывание файла Google Doc')
         self.raw_url = url
         self.url = self.edit_url()
         self.raw_report = self.filter_raw_data(self.get_data())
@@ -42,6 +43,7 @@ class GoogleDocFile:
         self.tables = self.create_tables()
 
     def edit_url(self):
+        log.info('Редактирование ссылки')
         export_param = 'export?format=xlsx'
         first_part = self.raw_url[:self.raw_url.rfind('/')]
         second_part = self.raw_url[self.raw_url.rfind('/')+1:]
@@ -107,6 +109,7 @@ class GoogleDocFile:
         return date_dict
 
     def edit_raw_report(self):
+        log.info('Оформление главной таблицы')
         report = copy(self.raw_report)
         report = self.date_coding(self.LAST_COLUMN, report)
         return report
@@ -114,14 +117,18 @@ class GoogleDocFile:
     def edit_data_cells(self, report):
         for column in report.columns:
             if column not in self.KEYWORDS:
-                report[column] = report[column].apply(self.convert_to_data, args=[self.CURRENT_YEAR])
+                # report[column] = report[column]).apply(self.convert_to_data, args=[self.CURRENT_YEAR])
+                report[column] = pd.DataFrame(report[column]).apply(self.convert_to_data, args=[self.CURRENT_YEAR, column], axis = 1)
         return report
 
     @staticmethod
-    def convert_to_data(string, current_year):
+    def convert_to_data(row, current_year, column):
+        string = row[column]
+        idx = str(row)[str(row).find('Name'):str(row).find('dtype')-2].split(': ')[1]
         if re.match(r'\d{4}-\d{2}-\d{2}', str(string).split(' ')[0]) != None:
             closed_date = datetime.strptime(str(string).split(" ")[0], '%Y-%m-%d').date()
             if closed_date.year != current_year:
+                log.info(f'В строке {idx} столбца {column} обнаружена некорректная дата')
                 closed_date = closed_date.replace(year=current_year)
                 return closed_date
             else:
@@ -178,7 +185,7 @@ class GoogleDocFile:
         elif point == 0:
             return 'План выполнен'
         else:
-            return 'План невыполнен'
+            return 'План не выполнен'
     @staticmethod
     def set_human_date(string,date_dict):
         if type(string) == dt.date:
@@ -187,6 +194,7 @@ class GoogleDocFile:
             return string
 
     def create_tables(self):
+        log.info('Оформление дополнительных таблиц')
         tables_name = ['main_table', 'summary_percent', 'superior_percent', 'date_table', 'term_data',
                                        'plan_table', 'best_company', 'worst_company', 'average_table']
         main_table_columns = ['Количество участков','План','Факт','Выполнение','Отклонение','Результат']
@@ -205,7 +213,7 @@ class GoogleDocFile:
                                      '']], columns=main_table_columns)
 
         summary_percent = sum(main_table['Факт'])/sum(main_table['План'])
-        superior_percent = len(self.report[self.report[self.LAST_COLUMN]>5])/len(self.report)
+        superior_percent = len(main_table[main_table['Результат'] == 'План не выполнен'])/len(main_table)
         date_table = np.around(self.raw_report[[self.LAST_COLUMN, 'Организация']].groupby([self.LAST_COLUMN], as_index=False).count(), 0)
         date_table['human_date'] = date_table[self.LAST_COLUMN].apply(self.set_human_date, args=[self.HUMAN_DATES])
         date_table.sort_index(ascending = False, inplace=True)
